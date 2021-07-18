@@ -1,0 +1,284 @@
+---
+title: "Project_2"
+author: "Sadik"
+date: "7/17/2021"
+output: html_document
+---
+
+MSDS 6372 Project 2 Description
+For this project I’m going to let you guys decide what data set you want to use.  Your choices are as follows.
+1.	https://archive.ics.uci.edu/ml/datasets/Bank+Marketing Predicting if a customer will subscribe to a term deposit.
+2.	https://archive.ics.uci.edu/ml/datasets/Adult Predicting if someone makes over 50k
+3.	R package aplore3, use the glow_bonemed data set.  Assessing risk factors and predicting if a woman with osteoperosis will have a bone fracture within the first year after joining the study. ?glow_bonemed for data description of variables.
+For this project, again you will only need to have a train/test split.   Depending on the data set you choose, the groups may have to discuss a strategy to effectively split the data set to deal with issues like unbalanced response levels (too many yes not enough no)  and/or small sample sizes could make splitting the data difficult.  I’m open for discussion when if the groups wants to bounce ideas off of me.
+Similar to Project 1, there are two main objectives for Project 2.  Since each group will be using their own data set, there will be a little flexibility in what needs to be delivered.  Below is a summary of what is absolutely necessary as part of your report.  
+Objective 1: Display the ability to perform EDA and build a logisitc regression model. 
+•	Perform your logistic regression analysis and provide interpretation of the regression coefficients including hypothesis testing, and confidence intervals. For simplicity sake, you do not need to include interactions with this model. Comment on the practical vs statistical significance of the deemed important factors.
+Logistical Considerations.
+•	Just like last time, this does not have to be extremely fancy in terms of the model building approach, let EDA, feature selection, and overall intuition guide you.
+•	If you feel like interactions are absolutely necessary to capture what is going on, then contact me so we can discuss an overall strategy of how to provide interpretations.
+Objective 2:  With a simple logistic regression model as a baseline, perform additional competing models to improve on prediction performance metrics.  Which metrics to compare models and evaluate performance are up to you and your given data set.
+•	Record the predictive performance metrics from your simple, highly interpretable model from Objective 1.
+•	You must include one additional logistic regression model which is also a more complicated logistic regression model than in Objective 1.  By complicated, I do not mean that you include more predictors (that will be somewhat sorted out in Objective 1), but rather model complexity through interaction terms, new variables created by the group, transformations or additions through polynomials.
+•	Create another competing model using just the continuous predictors and use LDA or QDA.  
+•	(Optional/Bonus) Use a nonparameteric model approach as a competing model.  Random forest or decision tree for predictors that are both categorical and continuous or a k-nearest neighbors approach if just working with continuous predictors. 
+•	Provide a summary table of the performance across the competing methods. Summarize the overall findings.  A really great report will also give insight as to why the “best” model won out.  This is where a thorough EDA will always help.
+Logistical Considerations.
+•	Don’t forget PCA can be helpful in various ways throughout your analysis as well as other unsupervised tools such as  heatmaps and cluster analysis from Unit 13.  Its not necessarily expected, but if your EDA is light, think about using these tools to get practice even if its not necessarily practical for your analysis.
+•	For feature selection for objective one, make sure you use lasso, but create your final model using a glm call so that you can obtain all the necessary statistical information and tests.  For objective two, I expect groups to provide ROC curves, discuss selection of an appropriate prediction cutoff, and reporting confusion matrix results like overall accuracy, sensitivity, and specificity (all from the test set).
+Additional details
+NOTE 1: ALL ANALYSIS MUST BE DONE IN SAS OR R and all code must be placed in the appendix of your report. I’m okay with data cleaning steps and EDA being provided using other tools such as Python.
+NOTE 2:  Do not forget about organization among your group.  Divide and conquer is always great, but there is “one report to rule them all” so make sure that it flows as you are stitching things together.
+Required Information and SAMPLE FORMAT
+Required deliverables in the complete report.  The format of your paper (headers, sections, etc) is flexible although should contain the following information.  
+PAGE LIMIT: I do not necesarrily require a page limit, but you should definitely be shooting for know more than 7 pages written.  It of course can blow up quite larger than that due to graphics and tables,  but good projects are clear, concise, to the point.  You do not need to show output for every model you considered.  (You may put supporting plots/charts/tables etc. in the appendix if you want, just make sure you label and reference them appropriately.)  
+Introduction Required
+Data Description  Required
+Exploratory Analysis Required
+
+Addressing Objective 1:
+	Restatement of Problem and the overall approach to solve it Required
+Model Selection Required
+		Type of Selection
+			Any or all:  LASSO, RIDGE, ELASTIC NET,
+			Stepwise, Forward, Backward 
+			Manual / Intuition		
+
+		Checking Assumptions Required
+                                        Optional  Lack of fit test
+                                        Influential point analysis (Cook’s D and Leverage)
+			Optional  Residual Plots
+			
+	Parameter Interpretation
+		Interpretation  Required
+		Confidence Intervals Required
+	
+Final conclusions from the analyses of Objective 1.  Tie things back to what your eda shows. Required
+
+
+Addressing Objective 2
+Make sure it is clear how many models were created to compete against the one in Objective 1.  Make note of any tuning parameters that were used and how you came up with them (knn and random forest logistics, CV for penalty of lasso, etc)  Required
+Main Analysis Content Required
+	Overall report of the error metrics on a test set (or CV run) as well as ROC curve information.  Also if the two best models have error rates of .05 and .045,  can we really say that one model is outperforming the other?  Comment on these things if they come up.  Required Metrics from Test set or CV:  Accuracy, Sensitivity, Specificity,ROC/AUC
+	I also highly recommend a plot comparing ROC curves across the methods tried.
+
+Conclusion/Discussion Required
+
+The conclusion should reprise the questions and conclusions of objective 2 with recommendations of the final model, what could be done to help analysis and model building in the future, and any insight as to why one method outshined all the rest if that is indeed the case.  If they all are similar why did you go with your final model?
+Appendix Required
+	Well commented SAS/R Code Required
+ 	Graphics and summary tables (Can be placed in the appendix or in the written report itself.)
+ 
+library(tidyverse)
+library(curl)
+library(class)
+library(e1071)
+library(caret)
+library(plotly)
+library(fuzzyjoin)
+library(RCurl)
+library(selectr)
+library(tidyselect)
+library(mvtnorm)
+library(stringr)
+library(disdat)
+library(carData)
+library(caret)
+library(plotly)
+#library(dbplyr)
+library(dplyr)
+library(ggthemes)
+library(ggplot2)
+library(GGally)
+library(gridExtra)
+library(psych)
+library(ggpubr)
+library(gridGraphics)
+library(reshape2)
+library(tuneGrid)
+library(plyr)
+library(randomForest)
+library(earth)
+library(corrplot)
+library(Metrics)
+library(readr)
+library(Zelig)
+library(faraway)
+library(survival)
+library(magrittr)
+library(dbplyr)
+library(sjmisc)
+library(data.table)
+library(kableExtra)
+library(MLmetrics)
+library(tidypredict)
+library(PerformanceAnalytics)
+library(rgl)
+library(MatrixModels)
+library(ModelMetrics)
+library(rpart)
+library(rpart.plot)
+library(palmerpenguins)
+library(mlbench)
+library(ISLR)
+library(MASS)
+library(FNN)
+library(tibble)
+library(kdensity)
+library(ROCR)
+
+# Attribute information for the data source page, this just to compare and for information
+Attribute Information:
+Listing of attributes:
+>50K, <=50K.
+
+age: continuous.
+workclass: Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+fnlwgt: continuous.
+education: Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+education-num: continuous.
+marital-status: Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+sex: Female, Male.
+capital-gain: continuous.
+capital-loss: continuous.
+hours-per-week: continuous.
+native-country: United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
+
+#Objective one
+#	https://archive.ics.uci.edu/ml/datasets/Adult Predicting if someone makes over 50k
+
+#EDA adult data
+
+#Importing the data set and creating data frame
+adult <- read.table('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data', 
+                    sep = ',', fill = F, strip.white = T)
+colnames(adult) <- c('age', 'workclass', 'fnlwgt', 'educatoin', 
+                     'educatoin_num', 'marital_status', 'occupation', 'relationship', 'race', 'sex', 
+                     'capital_gain', 'capital_loss', 'hours_per_week', 'native_country', 'income')
+
+# Removing non-self explanatory variables
+adult$educatoin <- NULL
+adult$fnlwgt <- NULL
+adult$relationship <- NULL
+# View the data
+View(adult)
+#Checking the dimensions, the data has 32561 observatiosn with 15 variables
+dim(adult)
+#Data set features, to see the name of all variables
+names(adult)
+#Data structure
+str(adult)
+#Checking work calss variables: creating factors: combining and grouping the data: "Never Worked" nad "Without pay" into other/uknown: Federal, state and local to goverenment groups, and self employed groups.
+# Combining all workcalss factors
+adult$workclass <- as.character(adult$workclass)
+ adult$workclass[adult$workclass == "Without-pay" | 
+                  adult$workclass == "Never-worked"] <- "Jobless"
+ adult$workclass[adult$workclass == "State-gov" |
+                  adult$workclass == "Local-gov"]  <- "govt" 
+ adult$workclass[adult$workclass == "Self-emp-inc" |
+                  adult$workclass == "Self-emp-not-inc"]  <- "Self-employed" 
+table(adult$workclass)
+
+
+# Combining mairtal status
+#Chceking data before combining
+table(adult$marital_status)
+#Combining
+adult$marital_status <- as.character(adult$marital_status)
+  adult$marital_status[adult$marital_status == "Married-AF-spouse" |
+                       adult$marital_status == "Married-civ-spouse" |
+                       adult$marital_status == "Married-spouse-absent"] <- "Married"
+  adult$marital_status[adult$marital_status == "Divorced" |
+                       adult$marital_status == "Separated" |
+                       adult$marital_status == "Widowed"] <- "Not-Married"
+table(adult$marital_status)
+
+# Combining countries
+adult$native_country <- as.character(adult$native_country)
+north.america <- c("Canada", "Cuba", "Dominican-Republic", "El-Salvador", "Guatemala",
+                   "Haiti", "Honduras", "Jamaica", "Mexico", "Nicaragua",
+                   "Outlying-US(Guam-USVI-etc)", "Puerto-Rico", "Trinadad&Tobago",
+                   "United-States")
+asia <- c("Cambodia", "China", "Hong", "India", "Iran", "Japan", "Laos",
+          "Philippines", "Taiwan", "Thailand", "Vietnam")
+south.america <- c("Columbia", "Ecuador", "Peru")
+europe <- c("England", "France", "Germany", "Greece", "Holand-Netherlands",
+            "Hungary", "Ireland", "Italy", "Poland", "Portugal", "Scotland",
+            "Yugoslavia")
+other <- c("South", "?")
+ adult$native_country [adult$native_country %in% north.america] <- "North-America"
+ adult$native_country [adult$native_country %in% asia]  <- "Asia"
+ adult$native_country [adult$native_country %in% south.america] <- "South-America" 
+ adult$native_country [adult$native_country %in% europe] <-  "Europe"  
+ adult$native_country [adult$native_country %in% other] <- "Other"
+table(adult$native_country)
+# dealing with "?" observed in the data in workclass, for thsi we will chnage it to NA values and remove it
+table(adult$workclass)
+adult[adult == "?"] <- NA
+table(adult$workclass)
+# Checking omition of NA values
+adult <- na.omit(adult)
+#Missing values you can see that adult data has zero missing values, will use thsi for anlaysis
+sum(is.na(adult))
+
+#Exporting data ready for anaylysis to folder
+write.csv(adult, file = "C:/Users/SADIK/OneDrive/Documents/Project1AppliedStatistics6372/MSDS_6372_AppliedStatistics_ProjectTwo/adult.csv")
+
+# Starting doing Simple anaysis using cleaning data: adult
+
+#Histogram for coninous variable age for great than 50k and less than 5OK, by Income group. We can see that majority makes less than 50k, and those who made 50k annualy they are in midcareer and females are also underrepresented this may bedue to census bias.
+ggplot(adult) + aes(x=as.numeric(age), group=income, fill=income) + 
+  geom_histogram(binwidth=1, color='blue') +
+  ggtitle("Income by age")
+# histogram of age by gender group
+ggplot(adult) + aes(x=as.numeric(age), group=sex, fill=sex) + 
+  geom_histogram(binwidth=1, color='blue')+
+  ggtitle("Income difference by age and sex")
+# histogram income by region and count
+setnames(adult, "native_country", "region")
+# Reorder factor levels by count
+region.ordered <- reorder(adult$region, adult$region, length)
+region.ordered <- factor(region.ordered, levels = rev(levels(region.ordered)))
+ggplot(adult, aes(region.ordered)) + geom_bar(aes(fill = income), color = "black") +
+ggtitle("Income by region")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                     
+
+
+
+
+
+                     
+                     
+
+
+
+
+
+
+
+
+
+
+
