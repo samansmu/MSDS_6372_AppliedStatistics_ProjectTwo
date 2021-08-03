@@ -1,0 +1,357 @@
+---
+title: "Project_2"
+author: "Sadik"
+date: "7/17/2021"
+output: html_document
+---
+
+MSDS 6372 Project 2 Description
+For this project I’m going to let you guys decide what data set you want to use.  Your choices are as follows.
+1.	https://archive.ics.uci.edu/ml/datasets/Bank+Marketing Predicting if a customer will subscribe to a term deposit.
+2.	https://archive.ics.uci.edu/ml/datasets/Adult Predicting if someone makes over 50k
+3.	R package aplore3, use the glow_bonemed data set.  Assessing risk factors and predicting if a woman with osteoperosis will have a bone fracture within the first year after joining the study. ?glow_bonemed for data description of variables.
+For this project, again you will only need to have a train/test split.   Depending on the data set you choose, the groups may have to discuss a strategy to effectively split the data set to deal with issues like unbalanced response levels (too many yes not enough no)  and/or small sample sizes could make splitting the data difficult.  I’m open for discussion when if the groups wants to bounce ideas off of me.
+Similar to Project 1, there are two main objectives for Project 2.  Since each group will be using their own data set, there will be a little flexibility in what needs to be delivered.  Below is a summary of what is absolutely necessary as part of your report.  
+Objective 1: Display the ability to perform EDA and build a logisitc regression model. 
+•	Perform your logistic regression analysis and provide interpretation of the regression coefficients including hypothesis testing, and confidence intervals. For simplicity sake, you do not need to include interactions with this model. Comment on the practical vs statistical significance of the deemed important factors.
+Logistical Considerations.
+•	Just like last time, this does not have to be extremely fancy in terms of the model building approach, let EDA, feature selection, and overall intuition guide you.
+•	If you feel like interactions are absolutely necessary to capture what is going on, then contact me so we can discuss an overall strategy of how to provide interpretations.
+Objective 2:  With a simple logistic regression model as a baseline, perform additional competing models to improve on prediction performance metrics.  Which metrics to compare models and evaluate performance are up to you and your given data set.
+•	Record the predictive performance metrics from your simple, highly interpretable model from Objective 1.
+•	You must include one additional logistic regression model which is also a more complicated logistic regression model than in Objective 1.  By complicated, I do not mean that you include more predictors (that will be somewhat sorted out in Objective 1), but rather model complexity through interaction terms, new variables created by the group, transformations or additions through polynomials.
+•	Create another competing model using just the continuous predictors and use LDA or QDA.  
+•	(Optional/Bonus) Use a nonparameteric model approach as a competing model.  Random forest or decision tree for predictors that are both categorical and continuous or a k-nearest neighbors approach if just working with continuous predictors. 
+•	Provide a summary table of the performance across the competing methods. Summarize the overall findings.  A really great report will also give insight as to why the “best” model won out.  This is where a thorough EDA will always help.
+Logistical Considerations.
+•	Don’t forget PCA can be helpful in various ways throughout your analysis as well as other unsupervised tools such as  heatmaps and cluster analysis from Unit 13.  Its not necessarily expected, but if your EDA is light, think about using these tools to get practice even if its not necessarily practical for your analysis.
+•	For feature selection for objective one, make sure you use lasso, but create your final model using a glm call so that you can obtain all the necessary statistical information and tests.  For objective two, I expect groups to provide ROC curves, discuss selection of an appropriate prediction cutoff, and reporting confusion matrix results like overall accuracy, sensitivity, and specificity (all from the test set).
+Additional details
+NOTE 1: ALL ANALYSIS MUST BE DONE IN SAS OR R and all code must be placed in the appendix of your report. I’m okay with data cleaning steps and EDA being provided using other tools such as Python.
+NOTE 2:  Do not forget about organization among your group.  Divide and conquer is always great, but there is “one report to rule them all” so make sure that it flows as you are stitching things together.
+Required Information and SAMPLE FORMAT
+Required deliverables in the complete report.  The format of your paper (headers, sections, etc) is flexible although should contain the following information.  
+PAGE LIMIT: I do not necesarrily require a page limit, but you should definitely be shooting for know more than 7 pages written.  It of course can blow up quite larger than that due to graphics and tables,  but good projects are clear, concise, to the point.  You do not need to show output for every model you considered.  (You may put supporting plots/charts/tables etc. in the appendix if you want, just make sure you label and reference them appropriately.)  
+Introduction Required
+Data Description  Required
+Exploratory Analysis Required
+
+Addressing Objective 1:
+	Restatement of Problem and the overall approach to solve it Required
+Model Selection Required
+		Type of Selection
+			Any or all:  LASSO, RIDGE, ELASTIC NET,
+			Stepwise, Forward, Backward 
+			Manual / Intuition		
+
+		Checking Assumptions Required
+                                        Optional  Lack of fit test
+                                        Influential point analysis (Cook’s D and Leverage)
+			Optional  Residual Plots
+			
+	Parameter Interpretation
+		Interpretation  Required
+		Confidence Intervals Required
+	
+Final conclusions from the analyses of Objective 1.  Tie things back to what your eda shows. Required
+
+
+Addressing Objective 2
+Make sure it is clear how many models were created to compete against the one in Objective 1.  Make note of any tuning parameters that were used and how you came up with them (knn and random forest logistics, CV for penalty of lasso, etc)  Required
+Main Analysis Content Required
+	Overall report of the error metrics on a test set (or CV run) as well as ROC curve information.  Also if the two best models have error rates of .05 and .045,  can we really say that one model is outperforming the other?  Comment on these things if they come up.  Required Metrics from Test set or CV:  Accuracy, Sensitivity, Specificity,ROC/AUC
+	I also highly recommend a plot comparing ROC curves across the methods tried.
+
+Conclusion/Discussion Required
+
+The conclusion should reprise the questions and conclusions of objective 2 with recommendations of the final model, what could be done to help analysis and model building in the future, and any insight as to why one method outshined all the rest if that is indeed the case.  If they all are similar why did you go with your final model?
+Appendix Required
+	Well commented SAS/R Code Required
+ 	Graphics and summary tables (Can be placed in the appendix or in the written report itself.)
+ 
+library(tidyverse)
+library(curl)
+library(class)
+library(e1071)
+library(caret)
+library(plotly)
+library(fuzzyjoin)
+library(RCurl)
+library(selectr)
+library(tidyselect)
+library(mvtnorm)
+library(stringr)
+library(disdat)
+library(carData)
+library(caret)
+library(plotly)
+#library(dbplyr)
+library(dplyr)
+library(ggthemes)
+library(ggplot2)
+library(GGally)
+library(gridExtra)
+library(psych)
+library(ggpubr)
+library(gridGraphics)
+library(reshape2)
+library(tuneGrid)
+library(plyr)
+library(randomForest)
+library(earth)
+library(corrplot)
+library(Metrics)
+library(readr)
+library(Zelig)
+library(faraway)
+library(survival)
+library(magrittr)
+library(dbplyr)
+library(sjmisc)
+library(data.table)
+library(kableExtra)
+library(MLmetrics)
+library(tidypredict)
+library(PerformanceAnalytics)
+library(rgl)
+library(MatrixModels)
+library(ModelMetrics)
+library(rpart)
+library(rpart.plot)
+library(palmerpenguins)
+library(mlbench)
+library(ISLR)
+library(MASS)
+library(FNN)
+library(tibble)
+library(kdensity)
+library(ROCR)
+library(VIM)
+library(missForest)
+
+
+# Attribute information for the data source page, this just to compare and for information
+Attribute Information:
+Listing of attributes:
+>50K, <=50K.
+
+age: continuous.
+workclass: Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+fnlwgt: continuous.
+education: Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+education-num: continuous.
+marital-status: Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+sex: Female, Male.
+capital-gain: continuous.
+capital-loss: continuous.
+hours-per-week: continuous.
+native-country: United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
+
+#Objective one
+
+#EDA adult data
+
+# Import the data from a url
+theUrl<-"http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+adult.data<- read.table(file = theUrl, header = FALSE, sep = ",", 
+                          strip.white = TRUE, stringsAsFactors = TRUE,
+                          col.names=c("age","workclass","fnlwgt","education","educationnum","maritalstatus","occupation","relationship","race","sex","capitalgain","capitalloss",                     "hoursperweek","nativecountry","income")
+)
+
+# observation 32561 variables 15
+dim (adult.data)
+# Data preprocessing (collapse the factor levels & re-coding)
+
+levels(adult.data$workclass)<- c("misLevel","FedGov","LocGov","NeverWorked","Private","SelfEmpNotInc","SelfEmpInc","StateGov","NoPay")
+
+levels(adult.data$education)<- list(presch=c("Preschool"), primary=c("1st-4th","5th-6th"),upperprim=c("7th-8th"), highsch=c("9th","Assoc-acdm","Assoc-voc","10th"),secndrysch=c("11th","12th"), graduate=c("Bachelors","Some-college"),master=c("Masters"), phd=c("Doctorate"))
+
+levels(adult.data$maritalstatus)<- list(divorce=c("Divorced","Separated"),married=c("Married-AF-    spouse","Married-civ-spouse","Married-spouse-absent"),notmarried=c("Never-married"),widowed=c("Widowed"))
+
+levels(adult.data$occupation)<- list(misLevel=c("?"), clerical=c("Adm-clerical"), lowskillabr=c("Craft-repair","Handlers-cleaners","Machine-op-inspct","Other-service","Priv-house-    serv","Prof-specialty","Protective-serv"),highskillabr=c("Sales","Tech-support","Transport-moving","Armed-Forces"),agricultr=c("Farming-fishing"))
+
+levels(adult.data$relationship)<- list(husband=c("Husband"), wife=c("Wife"), outofamily=c("Not-in-family"),unmarried=c("Unmarried"), relative=c("Other-relative"), ownchild=c("Own-child"))
+
+levels(adult.data$nativecountry)<- list(misLevel=c("?","South"),SEAsia=c("Vietnam","Laos","Cambodia","Thailand"),Asia=c("China","India","HongKong","Iran","Philippines","Taiwan"),NorthAmerica=c("Canada","Cuba","Dominican-Republic","Guatemala","Haiti","Honduras","Jamaica","Mexico","Nicaragua","Puerto-Rico","El-Salvador","United-States"), SouthAmerica=c("Ecuador","Peru","Columbia","Trinadad&Tobago"),Europe=c("France","Germany","Greece","Holand-Netherlands","Italy","Hungary","Ireland","Poland","Portugal","Scotland","England","Yugoslavia"),PacificIslands=c("Japan","France"),Oceania=c("Outlying-US(Guam-USVI-etc)"))
+
+
+# Missing data visualization
+
+aggr_plot <- aggr(adult.data, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, 
+                  labels=names(adult.data), cex.axis=.7, gap=3, 
+                  ylab=c("Histogram of missing data","Pattern")
+)
+# Missing data treatment
+ library(missForest)
+ imputdata<- missForest(adult.data) 
+# check imputed values
+ imputdata$ximp
+# assign imputed values to a data frame
+ adult.cmplt<- imputdata$ximp
+
+
+# Some obvious relationships ,, Box plot AGe and Income
+boxplot (age ~ income, data = adult.cmplt, 
+           main = "Age distribution for different income levels",
+           xlab = "Income Levels", ylab = "Age", col = "salmon")
+
+# Boxplot for hours per week in office and income
+ boxplot (hoursperweek ~ income, data = adult.cmplt, 
+           main = "More work hours, more income",
+           xlab = "Income Levels", ylab = "Hours per week", col = "salmon")
+ 
+# Some not-so-obvious relationships
+# Q-plot for occupation and income, 
+#Question: Does higher skill-set (sales, technical-support, transport movers, armed forces) is a guarantor to high income?
+
+ qplot(income, data = adult.cmplt, fill = occupation) + facet_grid (. ~ occupation)
+
+# Does higher education help earn more money? plot for education and income
+ qplot(income, data = adult.cmplt, fill = education) + facet_grid (. ~ education)
+
+ # plot for race, relationship and income
+ qplot(income, data = adult.cmplt, fill = relationship) + facet_grid (. ~ race)
+
+ # Detecting skewed variables, highly skewed if its absolute value is greater than 1. A. 
+ # moderately skewed if its absolute value is greater than 0.5.
+ skewedVars<- NA
+ library(moments) # for skewness()
+ for(i in names(adult.cmplt)){
+      if(is.numeric(adult.cmplt[,i])){
+        if(i != "income"){
+              # Enters this block if variable is non-categorical
+              skewVal <- skewness(adult.cmplt[,i])
+              print(paste(i, skewVal, sep = ": "))
+              if(abs(skewVal) > 0.5){
+                  skewedVars <- c(skewedVars, i)
+               }
+           }
+       }
+    }
+ 
+ # Skewed variable treatment 
+ adult.cmplt<- adult.cmplt[c(3,11:12,1,5,13,2,4,6:10,14:15)]
+ str(adult.cmplt)
+ # Post skewed treatment
+  adult.cmplt.norm<- adult.cmplt
+  adult.cmplt.norm[,1:3]<- log(adult.cmplt[1:3],2) # where 2 is log base 2
+  adult.cmplt.norm$capitalgain<- NULL
+ adult.cmplt.norm$capitalloss<-NULL
+ 
+ # Correlation detection 
+ 
+ correlat<- cor(adult.cmplt.norm[c(1:4)])
+ corrplot(correlat, method = "pie")
+ highlyCor <- colnames(adult.cmplt.num)[findCorrelation(correlat, cutoff = 0.7, verbose = TRUE)]
+ # All correlations <= 0.7 
+ highlyCor # No high Correlations found
+ character(0)
+ 
+#its evident that none of the predictors are highly correlated to each other. We now proceed to building the prediction model.
+# Predictive data analytics
+# In this section, we will discuss various approaches applied to model building, predictive power and their trade-offs.
+
+ # Creating the train and test dataset
+  ratio = sample(1:nrow(adult.cmplt), size = 0.25*nrow(adult.cmplt))
+  test.data = adult.cmplt[ratio,] #Test dataset 25% of total
+  train.data = adult.cmplt[-ratio,] #Train dataset 75% of total
+  dim(train.data)   #  [1] 24421    15
+  dim(test.data)    # [1] 8140   15
+ 
+# We fit a logistic regression model.
+ glm.fit<- glm(income~., family=binomial(link='logit'),data = train.data)
+# This Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred 
+#means that the data is possibly linearly separable. Let’s look at the summary for the model 
+ summary(glm.fit)
+ Call:
+   glm(formula = income ~ ., family = binomial(link = "logit"), 
+       data = train.data)
+ 
+# Deviance Residuals: 
+#   Min       1Q   Median       3Q      Max  
+# -5.1559  -0.4717  -0.1783  -0.0318   3.5043  
+# Coefficients: (1 not defined because of singularities)
+# Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)                 -2.717e+01  1.642e+02  -0.165 0.868555
+# Its evident that the significant predictors are age, workclassSelfEmpInc,fnlwgt,educationnum and maritalstatusmarried
+ 
+# We now create another logistic model that includes only the significant predictors, AIC: 18540
+glm.fit1<- glm(income ~ age + workclass + educationnum + fnlwgt + maritalstatus, family=binomial(link='logit'),data = train.data)
+# Now we can run the anova() function on the improved model to analyze the table of deviance. comparing model 1 and model 2
+# Model 2 is statistically significant as the p value is less than 0.05
+#age + workclass + educationnum + fnlwgt + maritalstatus) are relevant for the model. Anova to analyze the defiance
+anova(glm.fit, glm.fit1, test="Chisq") 
+
+# Backward selection on model1, gl.fit Residual Deviance: 15080 	AIC: 15170, we take the lowest AIC
+step(glm.fit, trace = F, scope = list(lower=formula(glm.fit), upper=formula(glm.fit)),
+     direction = 'backward')
+# Logistic regression model using selected varaibles by team, AIC= 18500
+glm.fit3<- glm(income ~ age + workclass + educationnum + race + nativecountry + maritalstatus, family=binomial(link='logit'),data = train.data)
+
+# Accuracy alos reduced when using varaibles selected by team
+set.seed(1234)
+glm.pred<- predict(glm.fit3, test.data, type = "response")
+hist(glm.pred, breaks=20)
+hist(glm.pred[test.data$income], col="red", breaks=20, add=TRUE)
+table(actual= test.data$income, predicted= glm.pred>0.5)
+      predicted
+actual  FALSE TRUE
+  <=50K  5704  420
+  >50K   1010 1006
+  
+ (5704+1006)/8140   # 8140 test.data , 6974/8140 , accuracy = 70..i.e 70% Accuracy. model incluses varabiables chosen by team.
+
+# We now test the logistic model on all predictors and make predictions on unseen data
+# But when using all variables Accuracy increases. Note: Logitic regression is good when using unseen data
+set.seed(1234)
+glm.pred<- predict(glm.fit, test.data, type = "response")
+hist(glm.pred, breaks=20)
+hist(glm.pred[test.data$income], col="red", breaks=20, add=TRUE)
+table(actual= test.data$income, predicted= glm.pred>0.5)
+       predicted
+actual  FALSE TRUE
+  <=50K  5680  546
+  >50K    620 1294
+  
+ (5680+1294)/8140   # 8140 test.data , 6974/8140 , accuracy = 85.7..i.e 86% Accuracy. model incluses all predictors in it
+
+
+
+
+# Objective two
+
+# FYI from google : Out-of-bag error, also called out-of-bag estimate, is a method of measuring the prediction error of random forests, boosted decision trees, and other machine learning models utilizing bootstrap aggregating.
+# Class Reliance (MCR)
+
+# Random Forest model acccuracy,   OOB estimate of  error rate: 11.83%, which means Accuracy
+#Here the Out of Bag error (OOB) gives us the miscalssification rate (MCR) of the model. In this case it comes out to #be 11.83%, which gives us the accuracy of 88.17%
+rf_adult_model<-randomForest(income~.,data = train.data)
+rf_adult_model
+# Plot To check classwise error
+#Red line represents MCR of class <=50k, green line represents MCR of class >50k and black line represents overall MCR #or OOB error. Overall error rate is what we are interested in which seems considerably good.
+plot(rf_adult_model)
+
+# LDA 
+#Linear Discriminate Analysis, overall, resulted in lower accuracy over logistic regression. The most probable reason #for this is because linear discriminate analysis assumes normally distributed predictors while logistic regression #does not
+
+#LDA with all predictors, Accuracy 85.57%
+ldafit <- lda(income~., data=train.data)
+ldapred <- predict(ldafit, newdata=test.data)
+ldatable <- table(ldapred$class, test.data$income)
+lda.acc <- mean(ldapred$class==test.data$income)
+
+# LDA excluding race and sex  acuuracy little lower: 85.50
+ldafit <- lda(income~.-race-sex, data=train.data)
+ldapred <- predict(ldafit, newdata=test.data)
+ldatable <- table(ldapred$class, test.data$income)
+lda.acc2 <- mean(ldapred$class==test.data$income)
+
+
+
+
+
+
+
