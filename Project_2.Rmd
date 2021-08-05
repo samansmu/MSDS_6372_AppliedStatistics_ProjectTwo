@@ -128,10 +128,6 @@ library(kdensity)
 library(ROCR)
 library(VIM)
 library(missForest)
-library(rockchalk)
-library(tree)
-library(gbm)
-library(glmnet)
 
 # Attribute information for the data source page, this just to compare and for information
 Attribute Information:
@@ -324,176 +320,20 @@ actual  FALSE TRUE
 
 
 
-# Objective two,  
-
-# FYI from google : Out-of-bag error, also called out-of-bag estimate, is a method of measuring the prediction error of random forests, boosted decision trees, and other machine learning models utilizing bootstrap aggregating.
-# Class Reliance (MCR)
-
-# Random Forest model acccuracy,   OOB estimate of  error rate: 11.83%, which means Accuracy
-#Here the Out of Bag error (OOB) gives us the miscalssification rate (MCR) of the model. In this case it comes out to #be 11.83%, which gives us the accuracy of 88.17%
-rf_adult_model<-randomForest(income~.,data = train.data)
-rf_adult_model
-# Plot To check classwise error
-#Red line represents MCR of class <=50k, green line represents MCR of class >50k and black line represents overall MCR #or OOB error. Overall error rate is what we are interested in which seems considerably good.
-plot(rf_adult_model)
-
-# LDA 
-#Linear Discriminate Analysis, overall, resulted in lower accuracy over logistic regression. The most probable reason #for this is because linear discriminate analysis assumes normally distributed predictors while logistic regression #does not
-
-#LDA with all predictors, Accuracy 85.57%
-ldafit <- lda(income~., data=train.data)
-ldapred <- predict(ldafit, newdata=test.data)
-ldatable <- table(ldapred$class, test.data$income)
-lda.acc <- mean(ldapred$class==test.data$income)
-
-# LDA excluding race and sex  acuuracy little lower: 85.50
-ldafit <- lda(income~.-race-sex, data=train.data)
-ldapred <- predict(ldafit, newdata=test.data)
-ldatable <- table(ldapred$class, test.data$income)
-lda.acc2 <- mean(ldapred$class==test.data$income)
+# Objective two
 
 
-# KNN and LASSO
- theUrl<-"http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
- adult.data1<- read.table(file = theUrl, header = FALSE, sep = ",",
- 		                strip.white = TRUE, stringsAsFactors = TRUE,
- 		                col.names=c("age","workclass","fnlwgt","education","educationnum","maritalstatus",
- 		                "occupation","relationship","race","sex","capitalgain","capitalloss",
- 		                "hoursperweek","nativecountry","income")
- 		                )
- dim (adult.data1)
-
-# Reducing Level in Categorical Variables
-levels(adult.data1$workclass)<- c("misLevel","FedGov","LocGov","NeverWorked","Private","SelfEmpNotInc","SelfEmpInc","StateGov","NoPay")
- levels(adult.data1$education)<- list(presch=c("Preschool"), primary=c("1st-4th","5th-6th"),upperprim=c("7th-8th"), highsch=c("9th","Assoc-acdm","Assoc-voc","10th"),secndrysch=c("11th","12th"), graduate=c("Bachelors","Some-college"),master=c("Masters"), phd=c("Doctorate"))
- levels(adult.data1$maritalstatus)<- list(divorce=c("Divorced","Separated"),married=c("Married-AF-	spouse","Married-civ-spouse","Married-spouse-absent"),notmarried=c("Never-married"),widowed=c("Widowed"))
- levels(adult.data1$occupation)<- list(misLevel=c("?"), clerical=c("Adm-clerical"), lowskillabr=c("Craft-repair","Handlers-cleaners","Machine-op-inspct","Other-service","Priv-house-	serv","Prof-specialty","Protective-serv"),highskillabr=c("Sales","Tech-support","Transport-moving","Armed-Forces"),agricultr=c("Farming-fishing"))
- levels(adult.data1$relationship)<- list(husband=c("Husband"), wife=c("Wife"), outofamily=c("Not-in-family"),unmarried=c("Unmarried"), relative=c("Other-relative"), ownchild=c("Own-child"))
- levels(adult.data1$nativecountry)<- list(misLevel=c("?","South"),SEAsia=c("Vietnam","Laos","Cambodia","Thailand"),Asia=c("China","India","HongKong","Iran","Philippines","Taiwan"),NorthAmerica=c("Canada","Cuba","Dominican-Republic","Guatemala","Haiti","Honduras","Jamaica","Mexico","Nicaragua","Puerto-Rico","El-Salvador","United-States"), SouthAmerica=c("Ecuador","Peru","Columbia","Trinadad&Tobago"),Europe=c("France","Germany","Greece","Holand-Netherlands","Italy","Hungary","Ireland","Poland","Portugal","Scotland","England","Yugoslavia"),PacificIslands=c("Japan","France"),Oceania=c("Outlying-US(Guam-USVI-etc)"))
-
-# Data Imputation
-imputdata<- missForest(adult.data1) 
-# check imputed values
- imputdata$ximp
-# assign imputed values to a data frame
- adult.cmplt<- imputdata$ximp
- 
-# Logistic regression, data division 75-25
-ratio = sample(1:nrow(adult.cmplt), size = 0.25*nrow(adult.cmplt))
- test.data = adult.cmplt[ratio,] #Test dataset 25% of total
- train.data = adult.cmplt[-ratio,] #Train dataset 75% of total
- dim(train.data)
- dim(test.data)
-  glm.fit<- glm(income~., family=binomial(link='logit'),data = train.data)
- summary(glm.fit)
- # Predicting  the Logistic model on Test data
- set.seed(1234) # for splitting the data Randomly into train and test data set 
- glm.pred<- predict(glm.fit, test.data, type = "response")
- glm.pred2<- predict(glm.fit, train.data, type = "response") # training data 
- hist(glm.pred, breaks=20)
- hist(glm.pred[test.data$income], col="red", breaks=20, add=TRUE)
- table(actual= test.data$income, predicted= glm.pred>0.5)
-#Confusion Matrix for Logistic Regression
-#  predicted
-#actual  FALSE TRUE
-#  <=50K  5661  492
-#  >50K    659 1328
- table(actual= train.data$income, predicted= glm.pred2>0.6)
-#       predicted
-#actual  FALSE  TRUE
-#  <=50K 17691   876
-#  >50K   2706  3148
-
-# LASSO,  Cross validation (CV)
-xTest <- model.matrix(income~.,data = test.data)
- yTest <-as.matrix (test.data$income)
- 
- xTrain <- model.matrix(income~.,data = train.data)
- yTrain <-as.matrix (train.data$income)
- 
- set.seed (1)
- cv.out=cv.glmnet (xTrain,yTrain,alpha=1,family="binomial",standardize=TRUE,type.measure = "class")
- plot(cv.out$glmnet.fit, xvar="lambda", label=TRUE)
- plot(cv.out)
- cv.out$lambda.min
- coef(cv.out,cv.out$lambda.min)
- # make prediction on testing dataset
- lasso.predict <- predict(cv.out, newx = xTest, s =cv.out$lambda.min,type = "class")
- cm = as.matrix(table(Actual = yTest, Predicted = lasso.predict))
-# Lasso Matrix
-#       Predicted
-#Actual  <=50K >50K
-#  <=50K  5660  493
-#  >50K    661 1326
-
-# KNN Using Lasso
-KnnxTrain<-xTrain[,c(-1,-5,-8,-14,-22)]
-summary(KnnxTrain)
- model<-knn.cv(KnnxTrain, yTrain, k=3)
- model5<-knn.cv(KnnxTrain, yTrain, k=5)
- model7<-knn.cv(KnnxTrain, yTrain, k=7)
- table(model, yTrain)
- 
-# Matrix KNN with LASSO, knn has highest accuracy when using k=7, 80
-#      yTrain
-#model   <=50K  >50K
-#  <=50K  16341  3665
-#  >50K   2226  2189
-
-# ROC 
-# model implementation
-adult_blr<-glm(income~.,data = train.data,family = "binomial")
-# argument (family = "binomial") is necessary as we are creating a model with dichotomous result
-summary(adult_blr)
-# to check how well is our model built we need to calculate predicted porobabilities
-# also our calculated probabilities need to be classified
-# in order to do that we also need to decide the threshold that best classifies our predicted results
-
-train.data$pred_prob_income<-fitted(adult_blr) 
-# this coloumn will have predicted probabilties of being 1
-head(train.data) # run the command to check if the new coloumn is added
-
-# compares predicted values with actual values in training dataset
-pred<-prediction(train.data$pred_prob_income,train.data$income)
 
 
-# stores the measures with respect to which we want to plot the ROC graph
-perf<-performance(pred,"tpr","fpr")
+                     
 
-# Plot the graph
-plot(perf,colorize=T,print.cutoffs.at=seq(0.1,by=0.05))
 
-# assigning threshold where sensitivity and specificity have almost similar values after observing the ROC graph
-train.data$pred_income<-ifelse(train.data$pred_prob_income<0.3,0,1) 
-# this coloumn will classify probabilities we calculated and classify them as 0 or 1 based on our threshold value (0.3) and store in this coloumn
-head(train.data)
 
-# Confusion Matrix,  Accuracy 84.25, accuracy = (TP+TN)/total possibilities. Tru positive+True negative
-# sensitivity # formula TP/(TP+FN), specificity # formula TN/(TN+FP)
-# Conclusion Accuracy good for Traing data
-table(train.data$income,train.data$pred_income)
-#      0     1
-#  <=50K 15841  2726
-#  >50K   1119  4735
-dim(train.data)   # 24421    17
 
-# Checking how well our model is built using test dataset:
-test.data$pred_prob_income<-predict(adult_blr,test.data,type = "response")
-# an extra argument(type = "response") is required while using 'predict' function to generate response as probabilities
-# this argument is not required while using 'fitted'
 
-test.data$pred_income<-ifelse(test.data$pred_prob_income<0.3,0,1)
-# we take the same threshold to classify which we considered while classifying probabilities of training data
-head(test.data)
-# dim(test_adult)
-table(test.data$income,test.data$pred_income)
-#Confusion matrix foe test data
-#      0    1
-#   <=50K 5258  895
-#   >50K   357 1630
-# Checking how much of vlaue is inside the curve , 0.9145845, 91.45%
-auc<-performance(pred,"auc")
-auc@y.values
 
-# Conclusion ROC
-We can conclude that we are getting an accuracy of 84% with 9.45% of our predicted values lying under the curve. Also our misclassifcation rate is 9.55%
+
+
+
+
+
