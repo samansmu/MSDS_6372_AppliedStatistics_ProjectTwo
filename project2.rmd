@@ -1,0 +1,680 @@
+---
+title: "Project 2"
+author: "Adeel, Sadik, Gavin"
+date: "7/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+#libraries needed for Predicting Earning Potenital
+library(naniar)
+library(tidyverse)
+library(curl)
+library(class)
+library(e1071)
+library(caret)
+library(caret)
+library(dplyr)
+library(ggthemes)
+library(ggplot2)
+library(GGally)
+library(corrplot)
+library(readr)
+library(magrittr)
+library(ISLR)
+library(MASS)
+library(FNN)
+library(tibble)
+library(kdensity)
+library(ROCR)
+library(VIM)
+library(missForest)
+
+```
+
+
+```{r}
+
+adult <- read.table("C:/Users/Adeel/OneDrive/Desktop/SMU/6372/Project 2 Details 2021/adult.data",sep = ",", fill = F, strip.white=T)
+
+colnames(adult) <- c('age', 'workclass', 'fnlwgt', 'education', 
+                     'education_num', 'marital_status', 'occupation', 'relationship', 'race', 'sex', 
+                     'capital_gain', 'capital_loss', 'hours_per_week', 'native_country', 'income')
+#dataframe statistics, strutcture and analysis
+str(adult)
+range(adult$age)
+dim(adult)
+
+# dealing with "?" observed in the data in workclass, for thsi we will chnage it to NA values and remove it
+table(adult$workclass)
+adult[adult == "?"] <- NA
+table(adult$workclass)
+
+```
+
+combing working classification factors into a smaller group
+```{r}
+#Checking work calss variables: creating factors: combining and grouping the data: "Never Worked" nad "Without pay" into other/uknown: Federal, state and local to goverenment groups, and self employed groups.
+# Combining all workcalss factors
+adult$workclass <- as.character(adult$workclass)
+ adult$workclass[adult$workclass == "Without-pay" | 
+                  adult$workclass == "Never-worked"] <- "Jobless"
+ adult$workclass[adult$workclass == "State-gov" |
+                  adult$workclass == "Local-gov"]  <- "govt" 
+ adult$workclass[adult$workclass == "Self-emp-inc" |
+                  adult$workclass == "Self-emp-not-inc"]  <- "Self-employed" 
+table(adult$workclass)
+
+
+# Combining mairtal status
+#Chceking data before combining
+table(adult$marital_status)
+#Combining
+adult$marital_status <- as.character(adult$marital_status)
+  adult$marital_status[adult$marital_status == "Married-AF-spouse" |
+                       adult$marital_status == "Married-civ-spouse" |
+                       adult$marital_status == "Married-spouse-absent"] <- "Married"
+  adult$marital_status[adult$marital_status == "Divorced" |
+                       adult$marital_status == "Separated" |
+                       adult$marital_status == "Widowed"] <- "Not-Married"
+table(adult$marital_status)
+
+# Combining countries
+adult$native_country <- as.character(adult$native_country)
+north.america <- c("Canada", "Cuba", "Dominican-Republic", "El-Salvador", "Guatemala",
+                   "Haiti", "Honduras", "Jamaica", "Mexico", "Nicaragua",
+                   "Outlying-US(Guam-USVI-etc)", "Puerto-Rico", "Trinadad&Tobago",
+                   "United-States")
+asia <- c("Cambodia", "China", "Hong", "India", "Iran", "Japan", "Laos",
+          "Philippines", "Taiwan", "Thailand", "Vietnam")
+south.america <- c("Columbia", "Ecuador", "Peru")
+europe <- c("England", "France", "Germany", "Greece", "Holand-Netherlands",
+            "Hungary", "Ireland", "Italy", "Poland", "Portugal", "Scotland",
+            "Yugoslavia")
+other <- c("South", "?")
+ adult$native_country [adult$native_country %in% north.america] <- "North-America"
+ adult$native_country [adult$native_country %in% asia]  <- "Asia"
+ adult$native_country [adult$native_country %in% south.america] <- "South-America" 
+ adult$native_country [adult$native_country %in% europe] <-  "Europe"  
+ adult$native_country [adult$native_country %in% other] <- "Other"
+table(adult$native_country)
+
+
+
+
+```
+
+exploring the dataset
+```{r}
+#change income variable to numerical
+#adult$income <- as.numeric(as.factor(adult$income))
+
+
+#correlation plot
+#num.var <- c(1,3,5,11:13,15)
+#corrplot(cor(adult[,num.var]))
+
+
+
+
+```
+
+```{r}
+# Removing non-self explanatory variables
+adult$education <- NULL
+adult$fnlwgt <- NULL
+adult$relationship <- NULL
+
+```
+
+
+preprocess continuous variables
+```{r}
+
+ggplot(adult, aes(age, fill = income)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Age by income") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(age, fill = marital_status)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Age by marital status") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(age, fill = workclass)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Age by Workclass") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ggplot(adult, aes(age, fill = marital_status)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Age by marital status") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ggplot(adult, aes(education_num, fill = race)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Education_num by race") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(capital_loss, fill = race)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Capital Loss by race") +
+  theme(plot.title = element_text(hjust = 0.5))
+  
+ggplot(adult, aes(capital_gain, fill = race)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for Capital Gain by race") +
+  theme(plot.title = element_text(hjust = 0.5))
+  
+ggplot(adult, aes(hours_per_week, fill = marital_status)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Boxplot for hours_per_week by marital status") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(x = education_num, fill = income)) + geom_bar(position="fill") + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Years of Education")
+
+adultCG <- adult %>% group_by(race) %>% summarize(sumcg = sum(capital_gain)) %>% mutate(Freq = round(sumcg/sum(sumcg),3))
+adultCG
+
+adultCL <- adult %>% group_by(race) %>% summarize(sumcg = sum(capital_loss)) %>% mutate(Freq = round(sumcg/sum(sumcg),3))
+adultCL
+
+ggplot(adult, aes(capital_gain, fill = income)) + 
+  geom_histogram() + 
+  ggtitle("Boxplot for Capital Gain by income") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(capital_loss, fill = income)) + 
+  geom_histogram() + 
+  ggtitle("Boxplot for Capital Loss by income") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(workclass, fill = income)) + 
+  geom_bar() + 
+  ggtitle("Boxplot for Work Class by income") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+
+```{r}
+#missing data analysis
+n_miss(adult)
+n_complete(adult)
+
+miss_var_summary(adult)
+
+vis_miss(adult)
+vis_miss(adult, sort_miss = TRUE)
+
+library(Amelia)
+missmap(adult, main = "Missing values")
+table (complete.cases(adult))
+
+sum(is.na(adult))
+
+
+```
+
+viewing type of factors that are available and clean up if required
+```{r}
+unique(adult$workclass)
+unique(adult$marital_status)
+unique(adult$occupation)
+unique(adult$race)
+unique(adult$native_country)
+
+
+```
+
+taking care of NA's
+```{r}
+# Checking omition of NA values
+adult <- na.omit(adult)
+#Missing values you can see that adult data has zero missing values, will use thsi for anlaysis
+sum(is.na(adult))
+
+
+```
+
+
+```{r}
+#statistical analysis for age and education
+adult %>% group_by(income) %>% dplyr::summarize(N = n(),
+                                                mean_of_age = mean(age),
+                                                strd_dev_of_age = sd(age),
+                                                mean_of_education_num = mean(education_num),
+                                                std_dev_of_education_num = sd(education_num),
+                                                correlation_between_x_and_y = cor(age,education_num))
+
+#statistical analysis for log age and education_nume
+adult %>% group_by(income) %>% dplyr::summarize(N = n(),
+                                                mean_of_age = mean(age),
+                                                strd_dev_of_age = sd(age),
+                                                mean_of_education_num = mean(education_num),
+                                                std_dev_of_education_num = sd(education_num),
+                                                correlation_between_x_and_y = cor(log(age),log(education_num)))
+
+
+
+#histograms of income by marital status
+ggplot(adult, aes(x=as.numeric(age), group = marital_status, fill = marital_status)) + 
+  geom_histogram(binwidth = 5, color = "black") + 
+  xlab("Marital Status Population of Census 1994") + 
+  ggtitle("Histogram of income") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#facet wrap histogram of age by marital status
+ggplot(adult, aes(x=as.numeric(age), group = marital_status, fill = marital_status)) + 
+  geom_histogram(binwidth = 5, color = "black") + 
+  xlab("Marital Status Population of Census 1994") + 
+  ggtitle("Histogram of income") + 
+  theme(plot.title = element_text(hjust = 0.5))+
+  facet_wrap(~marital_status)
+
+#histograms of income by age
+ggplot(adult, aes(x=as.numeric(age), group = sex, fill = sex)) + geom_histogram(binwidth = 5, color = "black") + xlab("Sex Population of Census 1994") + ggtitle("Histogram of sex") + theme(plot.title = element_text(hjust = 0.5))
+
+
+#histograms of income by age
+ggplot(adult, aes(x=as.numeric(age), group = income, fill = income)) + geom_histogram(binwidth = 5, color = "black") + xlab("Age Population of Census 1994") + ggtitle("Histogram of income") + theme(plot.title = element_text(hjust = 0.5))
+
+#statistics based on occupation
+adult_occup <- adult %>% group_by(occupation, income) %>% dplyr::summarise(N = n()) %>%
+  mutate(Freq = round(N/sum(N),3))
+
+#print out the adult_occup we just created
+adult_occup
+
+
+#breakdown of salaries based on jobs barplot
+adult_occup %>% ggplot(aes(occupation, y = N)) +
+  geom_bar(aes(fill = income), stat = "identity")
+
+#statistics based on sex
+adult_sex <- adult %>% group_by(sex, income) %>% dplyr::summarise(N = n()) %>%
+  mutate(Freq = round(N/sum(N),3))
+
+#print out the adult_sex we just created
+adult_sex
+
+#breakdown of salaries based on sex barplot
+adult_sex %>% ggplot(aes(sex, y = N)) +
+  geom_bar(aes(fill = income), stat = "identity") + 
+  ggtitle("Barplot by sex and income") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+#breakdown of salaries based on continent barplot
+adult_cont <- adult %>% group_by(native_country, income) %>% dplyr::summarise(N = n()) %>%
+  mutate(Freq = round(N/sum(N),3))
+
+#print out the adult_cont we just created
+adult_cont
+
+#breakdown of salaries based on native continent barplot
+adult_cont %>% ggplot(aes(native_country, y = N)) +
+  geom_bar(aes(fill = income), stat = "identity") + xlab("Native Continent") +
+  ggtitle("Barplot by native continent and income") + 
+  theme(plot.title = element_text(hjust = 0.5))
+  
+  
+#breakdown of salaries based on workclass barplot
+adult_work <- adult %>% group_by(workclass, income) %>% dplyr::summarise(N = n()) %>%
+  mutate(Freq = round(N/sum(N),3))
+
+#print out the adult_work we just created
+adult_work
+
+#breakdown of salaries based on native workclass barplot
+adult_work %>% ggplot(aes(workclass, y = N)) +
+  geom_bar(aes(fill = income), stat = "identity") + xlab("Workclass") +
+  ggtitle("Barplot by Workclass and income") + 
+  theme(plot.title = element_text(hjust = 0.5))  
+
+
+adult_num <- dplyr::select(adult,age,education_num,capital_gain,capital_loss,hours_per_week,income)
+
+view(adult_num)
+
+pairs(adult_num[1:5])
+
+#transformation data
+adult_num$age <- log(adult_num$age)
+adult_num$education <- log(adult_num$education)
+adult_num$capital_gain <- log(adult_num$capital_gain)
+adult_num$capital_loss <- log(adult_num$capital_loss)
+adult_num$hours_per_week <- log(adult_num$hours_per_week)
+
+#transforming the pairs
+pairs(adult_num[1:5])
+
+#correlation testing between variables
+cor(adult_num$age,adult_num$education)
+cor(adult_num$age,adult_num$capital_gain)
+cor(adult_num$capital_loss,adult_num$age)
+cor(adult_num$age,adult_num$hours_per_week)
+```
+
+
+
+
+```{r}
+#reviewing factors
+levels(adult$marital_status)
+
+#Converting to factors
+adult$workclass <- as.numeric(as.factor(adult$workclass))
+adult$marital_status <- as.numeric(as.factor(adult$marital_status))
+adult$race <- as.numeric(as.factor(adult$race))
+adult$sex <- as.numeric(as.factor(adult$sex))
+adult$native_country <- as.numeric(as.factor(adult$native_country))
+adult$income <- as.factor(adult$income)
+
+#reviewing factors
+levels(adult$workclass)
+levels(adult$marital_status)
+levels(adult$race)
+levels(adult$sex)
+levels(adult$native_country)
+levels(adult$income)
+                   
+               
+#renaming the native country column to continent
+adult <- rename(adult, "continent" = "native_country")
+
+#factorial analysis
+table(adult$race, adult$income)
+table(adult$continent, adult$income)
+table(adult$marital_status,adult$income)
+table(adult$sex,adult$income)
+table(adult$workclass,adult$income)
+
+```
+finding out the outliers and dropping them
+```{r}
+
+#removing outliers in the dataset
+adult <- adult %>% mutate(is_outlier = age <= 65) %>% filter(is_outlier == TRUE) %>% dplyr::select(-is_outlier)
+
+adult <- adult %>% mutate(is_outlier = education_num > 4) %>% filter(is_outlier == TRUE) %>% dplyr::select(-is_outlier)
+
+adult <- adult %>% mutate(is_outlier = hours_per_week >= 38 & hours_per_week <= 42) %>% filter(is_outlier == TRUE) %>% dplyr::select(-is_outlier)
+
+
+
+ggplot(adult, aes(age)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Age Boxplot ") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(education_num)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Education_num Boxplot ") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(adult, aes(hours_per_week)) + 
+  geom_boxplot()+coord_flip() +
+  ggtitle("Hours_per_week Boxplot ") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+
+
+```{r}
+#splitting the data into train and test
+
+ratio<-sample(1:nrow(adult), size = 0.25 * nrow(adult))
+train_data <- adult[-ratio,]
+test_data <- adult[ratio,]
+dim(train_data)
+dim(test_data)
+
+head(train_data)
+
+
+```
+objective 1 build a simple logistic model
+
+```{r}
+
+library(ROCR)
+
+#simple logistic regression
+logreg1 <- glm(income ~., data = train_data, family = binomial('logit'))
+summary(logreg1)
+
+confint(logreg1)
+
+summary(logreg1)
+
+full.model <- logreg1
+null.model <- glm(income ~ 1, data = train_data, family = binomial('logit'))
+
+#backward selection model
+step(full.model, trace = F, scope = list(lower=formula(null.model), upper=formula(full.model)),direction = 'backward')
+
+#forward selection model
+step(null.model, trace = F, scope = list(lower=formula(null.model), upper=formula(full.model)),direction = 'forward')
+
+#stepwise selection model
+#forward selection model
+step(null.model, trace = F, scope = list(lower=formula(null.model), upper=formula(full.model)),direction = 'both')
+
+#check accuracy
+predict1 <- predict(logreg1, train_data, type = "response")
+ROC_pred <- prediction(predict1, train_data$income)
+ROC_perf <- performance(ROC_pred, "tpr", "fpr")
+plot(ROC_perf, colorize=TRUE, print.cutoffs.at = seq(0,1,0.1), text.adj = c(-0.2, 1.7))
+abline(a=0, b=1)
+auc_train <- round(as.numeric(performance(ROC_pred, "auc")@y.values),2)
+legend(.8, .2, auc_train, title = "AUC", cex=1)
+
+#make predictions on test data
+Predict_test <- predict(logreg1, type = "response", newdata = test_data)
+test_tab <- table(test_data$income, Predict_test > 0.5)
+test_tab
+
+#residual plots
+logreg_summary <- broom::augment(logreg1) %>% mutate(index = 1:n())
+
+logreg_summary %>% top_n(3, .cooksd)
+
+ggplot(logreg_summary, aes(index, .std.resid)) + 
+  geom_point(aes(color = income), alpha = 0.5) + 
+  theme_bw() 
+
+#cooks D checking assumptions
+plot(logreg1, pch = 18, col = "red", which = c(6))
+
+car::vif(logreg1)
+
+#confidence interval
+CI_lower <- coefficients(logreg1)[2] - 1.96*summary(logreg1)$coefficients[2,2]
+CI_upper <- coefficients(logreg1)[2] + 1.96*summary(logreg1)$coefficients[2,2]
+
+CI_lower
+CI_upper
+
+```
+
+
+
+
+objective 2 build a complex logistic model
+```{r}
+#complex logistic regression
+logreg2 <- glm(income ~ education_num + capital_gain + 
+    + log(age) + log(hours_per_week) + capital_loss +  
+    education_num: capital_gain + age:hours_per_week, data = train_data, family = binomial('logit'))
+summary(logreg2)
+
+full.model2 <- logreg2
+null.model2 <- glm(income ~ 1, data = train_data, family = binomial('logit'))
+
+#backward selection model
+step(full.model2, trace = F, scope = list(lower=formula(null.model2), upper=formula(full.model2)),direction = 'backward')
+
+#forward selection model
+step(null.model2, trace = F, scope = list(lower=formula(null.model2), upper=formula(full.model2)),direction = 'forward')
+
+#stepwise selection model
+step(null.model2, trace = F, scope = list(lower=formula(null.model2), upper=formula(full.model2)),direction = 'both')
+
+#check accuracy
+predict2 <- predict(logreg2, train_data, type = "response")
+ROC_pred2 <- prediction(predict2, train_data$income)
+ROC_perf2 <- performance(ROC_pred2, "tpr", "fpr")
+plot(ROC_perf2, colorize=TRUE, print.cutoffs.at = seq(0,1,0.1), text.adj = c(-0.2, 1.7))
+abline(a=0, b=1)
+auc_train2 <- round(as.numeric(performance(ROC_pred2, "auc")@y.values),2)
+legend(.8, .2, auc_train2, title = "AUC", cex=1)
+
+#make predictions on test data
+Predict_test2 <- predict(logreg2, type = "response", newdata = test_data)
+test_tab2 <- table(test_data$income, Predict_test2 > 0.5)
+test_tab2
+
+accuracy_test2 <- round(sum(diag(test_tab2))/sum(test_tab2),2)
+sprintf("Accuracy on test set is %s", accuracy_test2)
+
+prob <- predict(logreg2, test_data, type = 'response')
+
+#residual plots
+logreg_summary2 <- broom::augment(logreg2) %>% mutate(index = 1:n())
+
+logreg_summary %>% top_n(3, .cooksd)
+
+ggplot(logreg_summary2, aes(index, .std.resid)) + 
+  geom_point(aes(color = income), alpha = 0.5) + 
+  theme_bw() 
+
+#cooks D checking assumptions
+plot(logreg2, pch = 18, col = "red", which = c(6))
+
+car::vif(logreg2)
+
+#confidence interval
+CI_lower2 <- coefficients(logreg2)[2] - 1.96*summary(logreg1)$coefficients[2,2]
+CI_upper2 <- coefficients(logreg2)[2] + 1.96*summary(logreg1)$coefficients[2,2]
+
+CI_lower2
+CI_upper2
+
+
+
+```
+
+
+
+object 2 LDA model
+```{r}
+	# LDA 
+#Linear Discriminate Analysis, overall, resulted in lower accuracy over logistic regression. The most probable reason #for this is because linear discriminate analysis assumes normally distributed predictors while logistic regression #does not
+
+#LDA with all predictors, Accuracy 83.31%
+ldafit <- lda(income~., data=train_data)
+ldapred <- predict(ldafit, newdata=test_data, type = 'response')
+ldapred2 <- predict(ldafit, newdata=test_data, type = 'class')
+ldatable <- table(ldapred$class, test_data$income)
+lda.acc <- mean(ldapred$class==test_data$income)
+lda.acc
+
+# LDA excluding race and sex  acuuracy little lower: 83.19%
+ldafit <- lda(income~.-race-sex, data=train_data)
+ldapred <- predict(ldafit, newdata=test_data)
+ldatable <- table(ldapred$class, test_data$income)
+lda.acc2 <- mean(ldapred$class==test_data$income)
+lda.acc2
+
+```
+
+
+
+Machine learning models for Objective 2 trees and random forest
+```{r}
+library(rpart)
+#decision trees model
+trees <- rpart(income ~., data=train_data, method = 'class', cp = 1e-3)
+trees_pred_prob <- predict(trees, newdata = test_data, type = 'prob')
+trees_pred <- predict(trees, newdata = test_data, type = 'class')
+
+#confusion matrix accuracy was 82.94%
+trees_cm <- table(trees_pred, test_data$income)
+trees_cm
+
+confusionMatrix(trees_pred, test_data$income)
+
+library(randomForest)
+#random forest model
+rf_model <- randomForest(income ~., data = train_data, ntree = 950)
+rf_model_predprob <- predict(rf_model, newdata = test_data, type = 'prob')
+rf_model_pred <- predict(rf_model, newdata = test_data, type = 'class')
+
+#confusion matrix, random forest model has accuracy of 86.19%
+rf_cm <- table(rf_model_pred, test_data$income)
+rf_cm
+
+confusionMatrix(rf_model_pred, test_data$income)
+
+```
+
+ROC curve calculation
+```{r}
+# create simple logistic regression
+pr <- prediction(prob, test_data$income)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+dd <- data.frame(FP = prf@x.values[[1]], TP = prf@y.values[[1]])
+
+#complex logistic regression
+pr1 <- prediction(prob, test_data$income)
+prf1 <- performance(pr1, measure = "tpr", x.measure = "fpr")
+dd1 <- data.frame(FP = prf@x.values[[1]], TP = prf1@y.values[[1]])
+
+#Decision Trees model
+pr2 <- prediction(trees_pred_prob[,2], test_data$income)
+prf2 <- performance(pr2, measure = "tpr", x.measure = "fpr")
+dd2 <- data.frame(FP = prf2@x.values[[1]], TP = prf2@y.values[[1]])
+
+
+# Random forest model
+pr3 <- prediction(rf_model_predprob[,2], test_data$income)
+prf3 <- performance(pr3, measure = "tpr", x.measure = "fpr")
+dd3 <- data.frame(FP = prf3@x.values[[1]], TP = prf3@y.values[[1]])
+
+
+# plot ROC curve for logistic regression
+g <- ggplot() + 
+  geom_line(data = dd, aes(x = FP, y = TP, color = 'Simple Logistic Regression')) +
+  geom_line(data = dd1, aes(x = FP, y = TP, color = 'Complex Logistic Regression')) +
+  geom_line(data = dd2, aes(x = FP, y = TP, color = 'Decision Trees')) +
+  geom_line(data = dd3, aes(x = FP, y = TP, color = 'Random Forest')) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1)) +
+  ggtitle('ROC Curve') + 
+  labs(x = 'False Positive Rate', y = 'True Positive Rate') 
+
+
+g +  scale_colour_manual(name = 'Classifier', values = c('Simple Logistic Regression'='#E69F00', 
+                                               'Complex Logistic Regression'='#56B4E9', 'Decision Trees'='#009E73', 
+                                               'Random Forest'='#D55E00')) + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+
+
+
